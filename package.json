@@ -3,7 +3,9 @@
   "scripts": {
     "test": "jest --passWithNoTests"
   },
-  "dependencies": {},
+  "dependencies": {
+    "axios": "^0.21.1"
+  },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.0",
     "@types/aws-lambda": "^8.0.0",
