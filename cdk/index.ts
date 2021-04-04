@@ -1,5 +1,5 @@
 import { NodejsFunction } from '@aws-cdk/aws-lambda-nodejs';
-import { App, CfnOutput, Duration, RemovalPolicy, Stack } from '@aws-cdk/core';
+import { App, Duration, RemovalPolicy, Stack } from '@aws-cdk/core';
 import { PolicyStatement } from '@aws-cdk/aws-iam';
 import { LogGroup, RetentionDays } from '@aws-cdk/aws-logs';
 
@@ -49,9 +49,8 @@ handler.addToRolePolicy(new PolicyStatement({
   ],
 }));
 
-new CfnOutput(stack, 'ServiceToken', {
-  value: handler.functionArn,
-  exportName: `${stack.stackName}:ServiceToken`,
+stack.exportValue(handler.functionArn, {
+  name: `${stack.stackName}:ServiceToken`,
 });
 
 new LogGroup(handler, 'LogGroup', {
