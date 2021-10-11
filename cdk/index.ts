@@ -1,7 +1,8 @@
-import { NodejsFunction } from '@aws-cdk/aws-lambda-nodejs';
-import { App, Duration, RemovalPolicy, Stack } from '@aws-cdk/core';
 import { PolicyStatement } from '@aws-cdk/aws-iam';
+import { Architecture } from '@aws-cdk/aws-lambda';
+import { NodejsFunction } from '@aws-cdk/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from '@aws-cdk/aws-logs';
+import { App, Stack, Duration, RemovalPolicy } from '@aws-cdk/core';
 
 const app = new App();
 
@@ -19,9 +20,7 @@ const handler = new NodejsFunction(stack, 'Handler', {
   environment: {
     NODE_OPTIONS: '--enable-source-maps',
   },
-});
-
-handler.configureAsyncInvoke({
+  architecture: Architecture.ARM_64,
   maxEventAge: Duration.minutes(1),
   retryAttempts: 0,
 });
