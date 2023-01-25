@@ -1,6 +1,6 @@
 import { App, Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { Architecture } from 'aws-cdk-lib/aws-lambda';
+import { Architecture, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 
@@ -12,6 +12,7 @@ const stack = new Stack(app, 'Stack', {
 
 const handler = new NodejsFunction(stack, 'Handler', {
   entry: 'src/index.ts',
+  runtime: Runtime.NODEJS_18_X,
   bundling: {
     minify: true,
     sourceMap: true,

@@ -1,17 +1,25 @@
 import type { Context } from 'aws-lambda';
+import { DescribeSecurityGroupsCommand, EC2Client, RevokeSecurityGroupEgressCommand, RevokeSecurityGroupIngressCommand } from '@aws-sdk/client-ec2';
 import axios from 'axios';
-import { ec2, handler } from '../src';
+import { mockClient } from 'aws-sdk-client-mock';
+import 'aws-sdk-client-mock-jest';
+import { handler } from '../src';
 
-jest.mock('aws-sdk');
 jest.mock('axios');
+
+const ec2 = mockClient(EC2Client);
+afterEach(() => {
+  ec2.reset();
+});
 
 const context = {} as Context;
 const callback = jest.fn();
 
 describe('Lambda handler', () => {
   it('Create event', async () => {
-    ec2.describeSecurityGroups = jest.fn().mockReturnValue({
-      promise: () => Promise.resolve({
+    ec2
+      .on(DescribeSecurityGroupsCommand)
+      .resolves({
         SecurityGroups: [
           {
             GroupId: 'sg-dummy',
@@ -19,14 +27,11 @@ describe('Lambda handler', () => {
             IpPermissionsEgress: [{}],
           },
         ],
-      }),
-    });
-    ec2.revokeSecurityGroupIngress = jest.fn().mockReturnValue({
-      promise: () => Promise.resolve(),
-    });
-    ec2.revokeSecurityGroupEgress = jest.fn().mockReturnValue({
-      promise: () => Promise.resolve(),
-    });
+      })
+      .on(RevokeSecurityGroupIngressCommand)
+      .resolves({})
+      .on(RevokeSecurityGroupEgressCommand)
+      .resolves({});
     const mockedPut = axios.put = jest.fn().mockResolvedValue({
       data: {},
     });
@@ -38,16 +43,17 @@ describe('Lambda handler', () => {
       },
     } as any, context, callback);
 
-    expect(ec2.describeSecurityGroups).toBeCalled();
-    expect(ec2.revokeSecurityGroupIngress).toBeCalled();
-    expect(ec2.revokeSecurityGroupEgress).toBeCalled();
-    expect(mockedPut).toBeCalled();
+    expect(ec2).toHaveReceivedCommand(DescribeSecurityGroupsCommand);
+    expect(ec2).toHaveReceivedCommand(RevokeSecurityGroupIngressCommand);
+    expect(ec2).toHaveReceivedCommand(RevokeSecurityGroupEgressCommand);
+    expect(mockedPut).toHaveBeenCalled();
     expect(mockedPut.mock.calls[0][1].Status).toBe('SUCCESS');
   });
 
   it('Update event', async () => {
-    ec2.describeSecurityGroups = jest.fn().mockReturnValue({
-      promise: () => Promise.resolve({
+    ec2
+      .on(DescribeSecurityGroupsCommand)
+      .resolves({
         SecurityGroups: [
           {
             GroupId: 'sg-dummy',
@@ -55,14 +61,11 @@ describe('Lambda handler', () => {
             IpPermissionsEgress: [{}],
           },
         ],
-      }),
-    });
-    ec2.revokeSecurityGroupIngress = jest.fn().mockReturnValue({
-      promise: () => Promise.resolve(),
-    });
-    ec2.revokeSecurityGroupEgress = jest.fn().mockReturnValue({
-      promise: () => Promise.resolve(),
-    });
+      })
+      .on(RevokeSecurityGroupIngressCommand)
+      .resolves({})
+      .on(RevokeSecurityGroupEgressCommand)
+      .resolves({});
     const mockedPut = axios.put = jest.fn().mockResolvedValue({
       data: {},
     });
@@ -77,17 +80,14 @@ describe('Lambda handler', () => {
       },
     } as any, context, callback);
 
-    expect(ec2.describeSecurityGroups).toBeCalled();
-    expect(ec2.revokeSecurityGroupIngress).toBeCalled();
-    expect(ec2.revokeSecurityGroupEgress).toBeCalled();
-    expect(mockedPut).toBeCalled();
+    expect(ec2).toHaveReceivedCommand(DescribeSecurityGroupsCommand);
+    expect(ec2).toHaveReceivedCommand(RevokeSecurityGroupIngressCommand);
+    expect(ec2).toHaveReceivedCommand(RevokeSecurityGroupEgressCommand);
+    expect(mockedPut).toHaveBeenCalled();
     expect(mockedPut.mock.calls[0][1].Status).toBe('SUCCESS');
   });
 
   it('Update event without change', async () => {
-    ec2.describeSecurityGroups = jest.fn();
-    ec2.revokeSecurityGroupIngress = jest.fn();
-    ec2.revokeSecurityGroupEgress = jest.fn();
     const mockedPut = axios.put = jest.fn().mockResolvedValue({
       data: {},
     });
@@ -102,15 +102,14 @@ describe('Lambda handler', () => {
       },
     } as any, context, callback);
 
-    expect(ec2.describeSecurityGroups).not.toBeCalled();
-    expect(ec2.revokeSecurityGroupIngress).not.toBeCalled();
-    expect(ec2.revokeSecurityGroupEgress).not.toBeCalled();
-    expect(mockedPut).toBeCalled();
+    expect(ec2).not.toHaveReceivedCommand(DescribeSecurityGroupsCommand);
+    expect(ec2).not.toHaveReceivedCommand(RevokeSecurityGroupIngressCommand);
+    expect(ec2).not.toHaveReceivedCommand(RevokeSecurityGroupEgressCommand);
+    expect(mockedPut).toHaveBeenCalled();
     expect(mockedPut.mock.calls[0][1].Status).toBe('SUCCESS');
   });
 
   it('Delete event', async () => {
-    ec2.describeSecurityGroups = jest.fn();
     const mockedPut = axios.put = jest.fn().mockResolvedValue({
       data: {},
     });
@@ -122,17 +121,17 @@ describe('Lambda handler', () => {
       },
     } as any, context, callback);
 
-    expect(ec2.describeSecurityGroups).not.toBeCalled();
-    expect(mockedPut).toBeCalled();
+    expect(ec2).not.toHaveReceivedCommand(DescribeSecurityGroupsCommand);
+    expect(mockedPut).toHaveBeenCalled();
     expect(mockedPut.mock.calls[0][1].Status).toBe('SUCCESS');
   });
 
   it('Failure', async () => {
-    ec2.describeSecurityGroups = jest.fn().mockReturnValue({
-      promise: () => Promise.reject({
+    ec2
+      .on(DescribeSecurityGroupsCommand)
+      .rejects({
         message: 'Test error',
-      }),
-    });
+      });
     const mockedPut = axios.put = jest.fn().mockResolvedValue({
       data: {},
     });
@@ -144,14 +143,13 @@ describe('Lambda handler', () => {
       },
     } as any, context, callback);
 
-    expect(ec2.describeSecurityGroups).toBeCalled();
-    expect(mockedPut).toBeCalled();
+    expect(ec2).toHaveReceivedCommand(DescribeSecurityGroupsCommand);
+    expect(mockedPut).toHaveBeenCalled();
     expect(mockedPut.mock.calls[0][1].Status).toBe('FAILED');
     expect(mockedPut.mock.calls[0][1].Reason).toBe('Test error');
   });
 
   it('without VpcIds', async () => {
-    ec2.describeSecurityGroups = jest.fn();
     const mockedPut = axios.put = jest.fn().mockResolvedValue({
       data: {},
     });
@@ -161,13 +159,12 @@ describe('Lambda handler', () => {
       ResourceProperties: {},
     } as any, context, callback);
 
-    expect(ec2.describeSecurityGroups).not.toBeCalled();
-    expect(mockedPut).toBeCalled();
+    expect(ec2).not.toHaveReceivedCommand(DescribeSecurityGroupsCommand);
+    expect(mockedPut).toHaveBeenCalled();
     expect(mockedPut.mock.calls[0][1].Status).toBe('FAILED');
   });
 
   it('with scalar VpcIds', async () => {
-    ec2.describeSecurityGroups = jest.fn();
     const mockedPut = axios.put = jest.fn().mockResolvedValue({
       data: {},
     });
@@ -179,8 +176,8 @@ describe('Lambda handler', () => {
       },
     } as any, context, callback);
 
-    expect(ec2.describeSecurityGroups).not.toBeCalled();
-    expect(mockedPut).toBeCalled();
+    expect(ec2).not.toHaveReceivedCommand(DescribeSecurityGroupsCommand);
+    expect(mockedPut).toHaveBeenCalled();
     expect(mockedPut.mock.calls[0][1].Status).toBe('FAILED');
   });
 });
