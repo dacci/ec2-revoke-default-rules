@@ -4,7 +4,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.45.0",
+    "aws-cdk-lib": "^2.83.1",
     "axios": "^1.2.4",
     "constructs": "^10.1.128"
   },
@@ -16,7 +16,7 @@
     "@types/node": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
-    "aws-cdk": "^2.45.0",
+    "aws-cdk": "^2.83.1",
     "aws-sdk-client-mock": "^2.0.1",
     "aws-sdk-client-mock-jest": "^2.0.1",
     "esbuild": "0.17.4",
